@@ -7,8 +7,7 @@ import { Formik } from 'formik';
 import { postProfileThunk, setErrorCreator, putAvatarThunk } from '../../redux/reducers/profileReducer';
 import { PhotoPicker } from '../../ui/PhotoPicker';
 import { userImg } from '../../../assets/defaultImage';
-import { HeaderButtons, Item } from 'react-navigation-header-buttons';
-import { AppHeaderIcons } from '../../ui/AppHeaderIcons';
+import { IconBack } from '../../ui/IconBack';
 
 export const ProfileEdit = () => {
     const dispatch = useDispatch();
@@ -86,7 +85,7 @@ export const ProfileEdit = () => {
         }}>
             {({ handleChange, handleSubmit, values, setFieldValue }) => (
                 <ImageBackground style={styles.backImg} source={require('../../../assets/backgroundSpace.png')}>
-                    <ScrollView>
+                    <ScrollView showsVerticalScrollIndicator={false}>
                         <View style={styles.block}>
                             <Text style={styles.title}>Редактирование</Text>
                             {error && <Text style={styles.error}>{error}</Text>}
@@ -99,23 +98,54 @@ export const ProfileEdit = () => {
                                 putAvatar={putAvatar}
                             />
                             </View>
-                                {Wrapper('Ваш ник', values.profile.fullName, values.profile.fullName, handleChange('profile.fullName', 35))}
-                                {Wrapper('Ваш статус', values.profile.aboutMe, values.profile.aboutMe, handleChange('profile.aboutMe', 35))}
-                                {Wrapper('О вас', values.profile.lookingForAJobDescription, values.profile.lookingForAJobDescription, handleChange('profile.lookingForAJobDescription', 75))}
+                                {Wrapper(
+                                    'Ваш ник',
+                                    values.profile.fullName,
+                                    values.profile.fullName,
+                                    handleChange('profile.fullName',
+                                    35
+                                ))}
+                                {Wrapper(
+                                    'Ваш статус',
+                                    values.profile.aboutMe,
+                                    values.profile.aboutMe,
+                                    handleChange('profile.aboutMe',
+                                    35
+                                ))}
+                                {Wrapper(
+                                    'О вас',
+                                    values.profile.lookingForAJobDescription,
+                                    values.profile.lookingForAJobDescription,
+                                    handleChange('profile.lookingForAJobDescription',
+                                    75
+                                ))}
                                 <CheckBox
                                     checked={values.profile.lookingForAJob}
                                     checkedColor='#3959ab'
                                     title='Потребность в работе'
-                                    onPress={() => setFieldValue('profile.lookingForAJob', !values.profile.lookingForAJob)}
+                                    onPress={() => setFieldValue(
+                                        'profile.lookingForAJob',
+                                        !values.profile.lookingForAJob
+                                    )}
                                     containerStyle={styles.checkboxIcon}
                                 />
                                 <Text style={styles.title}>Социальные сети</Text>
                                 {Object.keys(values.profile.contacts).map(e => (
                                     <Fragment key={e}>
-                                        {Wrapper(e.toUpperCase(), values.profile.contacts[e], values.profile.contacts[e], handleChange(`profile.contacts.${e}`))}
+                                        {Wrapper(
+                                            e.toUpperCase(),
+                                            values.profile.contacts[e],
+                                            values.profile.contacts[e],
+                                            handleChange(`profile.contacts.${e}`
+                                        ))}
                                     </Fragment>
                                 ))}
-                                <Button titleStyle={styles.saveButtonTitle} buttonStyle={styles.saveButton} title='Сохранить' onPress={handleSubmit} />
+                                <Button
+                                    titleStyle={styles.saveButtonTitle}
+                                    buttonStyle={styles.saveButton}
+                                    title='Сохранить'
+                                    onPress={handleSubmit}
+                                />
                             </View>
                         </View>
                     </ScrollView>
@@ -130,11 +160,7 @@ ProfileEdit.navigationOptions = ({ navigation }) => {
 
     return {
         headerTitle: profile.fullName.toUpperCase(),
-        headerLeft: () => (
-            <HeaderButtons HeaderButtonComponent={AppHeaderIcons}>
-                <Item title='edit-back' iconName='ios-arrow-back' onPress={() => navigation.goBack()} />
-            </HeaderButtons> // in future create hoc for this components (!)
-        )
+        headerLeft: () => <IconBack nav={navigation} />
     }
 }
 
@@ -165,7 +191,9 @@ const styles = StyleSheet.create({
             width: 2,
             height: 2
         },
-        elevation: 8
+        elevation: 8,
+        borderBottomEndRadius: 30,
+        borderBottomStartRadius: 30
     },
     input: {
         color: '#000',
@@ -183,7 +211,8 @@ const styles = StyleSheet.create({
     },
     saveButton: {
         backgroundColor: 'green',
-        borderRadius: 0
+        borderBottomEndRadius: 30,
+        borderBottomStartRadius: 30
     },
     saveButtonTitle: {
         textTransform: 'uppercase'

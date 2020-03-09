@@ -99,13 +99,3 @@ export const getIsDeveloperThunk = () => async dispatch => {
 export const getAdminThunk = () => async dispatch => {
     getFireBaseAPI(Ajax.getAdmin, GET_ADMIN, 'isAdmin', dispatch);
 }
-
-export const setAdminThunk = id => async dispatch => {
-    await Ajax.postAdmin(id);
-    dispatch(getAdminThunk());
-}
-
-export const deleteAdminThunk = key => async dispatch => {
-    await Ajax.deleteAdmin(key);
-    dispatch(getAdminThunk());
-}

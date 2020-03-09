@@ -42,7 +42,7 @@ export const PhotoPicker = ({ image, setImage, putAvatar, profile }) => {
             alert('Предоставьте доступ в настойках!');
             return;
         }
-    
+        
         const img = await ImagePicker.launchImageLibraryAsync();
         setImage(img.uri);
         putAvatar(img);

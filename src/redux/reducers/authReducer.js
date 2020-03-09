@@ -1,5 +1,6 @@
 import { Ajax } from '../../ajax/ajax';
 import { stopSubmit } from 'redux-form';
+import { changeRootCreator } from './loginReducer';
 
 const GET_AUTH = 'haries-network/authReducer/GET-AUTH';
 const SET_LOADING = 'haries-network/authReducer/SET-LOADING';
@@ -47,6 +48,7 @@ export const postAuthThunk = (email, password, captcha) => {
             const response = await Ajax.postAuth(email, password, captcha);
             if (response.data.resultCode === 0) {
                 dispatch(getAuthThunk());
+                dispatch(changeRootCreator(email.toLowerCase(), password));
             } else {
                 if (response.data.resultCode === 10) {
                     const response = await Ajax.getCaptcha();

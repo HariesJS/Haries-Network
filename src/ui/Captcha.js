@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal, View, Image, StyleSheet, ImageBackground, StatusBar, Dimensions } from 'react-native';
 import { InputRender } from '../redux/reduxForm/formsControl';
 import { requireField } from '../redux/reduxForm/validators';

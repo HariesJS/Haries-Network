@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, ImageBackground, StatusBar, Alert, ScrollView, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ImageBackground, StatusBar, ScrollView, Keyboard, Image } from 'react-native';
 import { Entypo, MaterialIcons } from '@expo/vector-icons';
 import { Field, reduxForm } from 'redux-form';
 import { InputRender } from '../redux/reduxForm/formsControl';
@@ -9,15 +9,20 @@ import { useDispatch, useSelector } from 'react-redux';
 import { postAuthThunk, setCaptchaCreator } from '../redux/reducers/authReducer';
 import { Wrapper } from '../ui/Wrapper';
 import { Captcha } from '../ui/Captcha';
+import { openBrowser } from '../ui/OpenBrowser';
+import { getDataThunk, removeDataThunk } from '../redux/reducers/loginReducer';
+import { userImg } from '../../assets/defaultImage';
+import { ActionSheet } from 'native-base';
 
 const Login = ({ handleSubmit, error }) => {
     const dispatch = useDispatch();
 
     const loading = useSelector(state => state.authAPI.loading);
     const captcha = useSelector(state => state.authAPI.captcha);
+    const localData = useSelector(state => state.loginAPI.data);
 
     const [isKeyboard, setIsKeyboard] = useState(false);
-
+    
     useEffect(() => {
         let keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
@@ -42,6 +47,7 @@ const Login = ({ handleSubmit, error }) => {
     }
     
     useEffect(() => {
+        dispatch(getDataThunk());
         return () => dispatch(setCaptchaCreator(null));
     }, []);
 
@@ -51,8 +57,10 @@ const Login = ({ handleSubmit, error }) => {
     const [modal, setModal] = useState(false);
     const [captchaValue, setCaptchaValue] = useState('');
 
+    const [visible, setVisible] = useState(localData.length);
+
     const onSubmit = e => {
-        dispatch(postAuthThunk(e.email, e.password, captchaValue));
+        dispatch(postAuthThunk(e.email, e.password, captchaValue))
         setCaptchaValue('');
     }
 
@@ -74,10 +82,8 @@ const Login = ({ handleSubmit, error }) => {
             >
                 <Text style={styles.title}>Haries Network</Text>
                 <View style={styles.wrapper}>
-                    <View style={{
-                        top: '9%',
-                        left: '15%',
-                    }}>
+                    {!visible
+                    ? <><View style={styles.iconPosition}>
                         <MaterialIcons
                             size={24}
                             color={emailValue ? '#fff' : '#ccc'}
@@ -92,13 +98,10 @@ const Login = ({ handleSubmit, error }) => {
                         keyboardType='email-address'
                         component={InputRender}
                         placeholder='E-mail'
-                        autoCapitalize='words'
+                        autoCapitalize='none'
                         maxLength={30}
                     />
-                    <View style={{
-                        top: '9%',
-                        left: '15%',
-                    }}>
+                    <View style={styles.iconPosition}>
                         <MaterialIcons
                             size={24}
                             color={passwordValue ? '#fff' : '#ccc'}
@@ -131,25 +134,51 @@ const Login = ({ handleSubmit, error }) => {
                                 onPress={() => setShowPassword(!showPassword)}
                             />
                         )}
-                    </View>
+                    </View></>
+                    : (
+                        <ScrollView showsHorizontalScrollIndicator={false} horizontal={true}>{localData.map(e => {
+                            return (
+                                <Wrapper
+                                    key={e.id}
+                                    onPress={() =>
+                                        ActionSheet.show({
+                                            options: [`Войти через ${e.email}`, 'Убрать', 'Отменить'],
+                                            cancelButtonIndex: 2,
+                                            destructiveButtonIndex: 1,
+                                            title: 'Управление сохранённым аккаунтом'
+                                        },
+                                        buttonIndex => {
+                                            switch (buttonIndex) {
+                                                case 0:
+                                                    onSubmit(e);
+                                                    break;
+                                                case 1:
+                                                    dispatch(removeDataThunk(e.id));
+                                                    localData.length === 1 && setVisible(false);
+                                                    break;
+                                                default:
+                                                    break;
+                                            }
+                                        })
+                                    }>
+                                    <View style={styles.viewHorizontal}>
+                                        <Image
+                                            style={styles.image}
+                                            source={{ uri: userImg }}
+                                        />
+                                        <Text style={styles.email}>{e.email}</Text>
+                                    </View>
+                                </Wrapper>
+                            )
+                        })}
+                        </ScrollView>
+                    )}
                     <Scroll>
                         <Error onPress={() => captcha && setModal(true)}>
-                            <View style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                backgroundColor: 'rgba(217, 17, 17, 0.8)',
-                                justifyContent: 'center',
-                                marginBottom: Dimensions.get('window').height / 30,
-                                opacity: error ? 1 : 0
-                            }}>
+                            <View style={{ ...styles.iconWrapper, opacity: error ? 1 : 0 }}>
                                 <MaterialIcons name='error' size={24} color='#fff' />
                                 <Text
-                                    style={{
-                                    color: '#fff',
-                                    fontSize: 20,
-                                    padding: '1%',
-                                    textTransform: 'uppercase',
-                                }}>{captcha ? 'Подробности...' : error}</Text>
+                                    style={styles.captcha}>{captcha ? 'Подробности...' : error}</Text>
                             </View>
                         </Error>
                         <Captcha
@@ -160,7 +189,8 @@ const Login = ({ handleSubmit, error }) => {
                             value={captchaValue}
                             setValue={setCaptchaValue}
                         />
-                        <Button
+                        {!visible
+                        && <Button
                             onPress={handleSubmit(onSubmit)}
                             activeOpacity={0.7}
                             title='Войти'
@@ -169,14 +199,22 @@ const Login = ({ handleSubmit, error }) => {
                             loading={loading}
                             disabledStyle={styles.login_button}
                             buttonStyle={styles.login_button}
-                        />
-                        <Button
+                        />}
+                        {!localData.length
+                        ? <Button
                             title='Создать аккаунт'
                             activeOpacity={0.7}
                             titleStyle={styles.login}
                             buttonStyle={styles.login_button}
-                            onPress={() => Alert.alert('open in browser from this app')}
+                            onPress={() => openBrowser('https://social-network.samuraijs.com/signUp')}
                         />
+                        : <Button
+                            title={!visible ? 'Аккаунты' : 'Войти вручную'}
+                            activeOpacity={0.7}
+                            titleStyle={styles.login}
+                            buttonStyle={styles.login_button}
+                            onPress={() => setVisible(!visible)}
+                        />}
                     </Scroll>
                 </View>
             </ImageBackground>
@@ -238,6 +276,35 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'rgba(0, 0, 0, 0.7)',
         padding: Dimensions.get('window').height / 150,
+    },
+    iconPosition: {
+        top: '9%',
+        left: '15%',
+    },
+    email: {
+        color:'#fff',
+        fontSize:15,
+        textAlign:'center'
+    },
+    iconWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(217, 17, 17, 0.8)',
+        justifyContent: 'center',
+        marginBottom: Dimensions.get('window').height / 30,
+    },
+    captcha: {
+        color: '#fff',
+        fontSize: 20,
+        padding: '1%',
+        textTransform: 'uppercase',
+    },
+    viewHorizontal: {
+        paddingHorizontal: 50
+    },
+    image: {
+        width:100,
+        height:100
     }
 })
 

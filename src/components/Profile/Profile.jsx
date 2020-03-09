@@ -8,18 +8,32 @@ import { userImg } from '../../../assets/defaultImage';
 import { Preloader } from '../../ui/Preloader';
 import { Block } from '../../ui/Block';
 import { Avatar } from 'react-native-elements';
-import { postOnlineThunk } from '../../redux/reducers/usersReducer';
-// import PushNotification from 'react-native-push-notification';
-import { Notifications } from 'expo';
-// ПОЛУЧИТЬ API-KEY FROM SERVER; APPLE & ANDROID ICONS TO ONLINE && BACK ICON SINGLE
+import { postOnlineThunk, getUsersThunk } from '../../redux/reducers/usersReducer';
+import { Wrapper } from '../../ui/Wrapper';
+import { createDataThunk } from '../../redux/reducers/loginReducer';
+import { HrLine } from '../../ui/HrLine';
 
-export const Profile = () => {
+export const Profile = ({ navigation }) => {
     const dispatch = useDispatch();
     const profile = useSelector(state => state.profileAPI.profile);
     const data = useSelector(state => state.authAPI.data);
     const isOnline = useSelector(state => state.usersAPI.isOnline);
+    const users = useSelector(state => state.usersAPI.users);
+    const localData = useSelector(state => state.loginAPI.data);
+    const root = useSelector(state => state.loginAPI.root);
     
     const [refresh, setRefresh] = useState(false);
+
+    const createData = useCallback(() => {
+        const localStorage = {
+            email: root.email,
+            password: root.password,
+            img: profile && profile.photos.large || userImg
+        }
+        if (!localData.find(e => e.email === data.email)) {
+            dispatch(createDataThunk(localStorage));
+        }
+    }, [dispatch, localData]);
 
     const loadProfile = useCallback(() => {
         dispatch(getProfileThunk(data.id));
@@ -30,8 +44,13 @@ export const Profile = () => {
     }, [dispatch, isOnline.length, data.id]);
 
     useEffect(() => {
+        dispatch(getUsersThunk());
         loadProfile();
     }, [loadProfile]);
+
+    useEffect(() => {
+        createData();
+    }, []);
 
     if (!profile || profile.userId !== data.id) {
         return <Preloader />
@@ -51,7 +70,7 @@ export const Profile = () => {
             source={require('../../../assets/backgroundHolmes.png')}
         >
             <StatusBar barStyle='light-content' />
-            <ScrollView refreshControl={
+            <ScrollView showsVerticalScrollIndicator={false} refreshControl={
                 <RefreshControl
                     refreshing={refresh}
                     onRefresh={onRefresh}
@@ -69,7 +88,7 @@ export const Profile = () => {
                             <Text style={styles.title}>({profile.userId})</Text>
                         </View>
                     </View>
-                    <View style={styles.hr_line}></View>
+                    <HrLine prop={true} />
                     <View style={styles.user_info_block}>
                         {profile.aboutMe
                         ? <Block style={styles.text} title='статус:' value={profile.aboutMe} />
@@ -93,10 +112,23 @@ export const Profile = () => {
                             ))}
                         </View>
                     </View>
-                    <View style={styles.hr_line}></View>
-                    <View>
-                        <Text style={styles.subscribe_title}>подписки</Text>
-                    </View>
+                    <HrLine prop={true} />
+                    <Text style={styles.subscribe_title}>подписки</Text>
+                    <Text style={styles.addFriends}>(найти пользователей можно во вкладке 'Users')</Text>
+                    <ScrollView showsHorizontalScrollIndicator={false} horizontal={true}>
+                        <View style={styles.iterDirection}>{
+                            users.filter(({ followed }) => followed).map(e => (
+                            <View key={e.id} style={styles.iterWrap}>
+                                <Wrapper onPress={() => navigation.navigate('User', { user: e })}>
+                                    <Image
+                                        style={styles.iterImage}
+                                        source={{ uri: e.photos.large || userImg }}
+                                    />
+                                </Wrapper>
+                                <Text style={styles.iterName}>{e.name}</Text>
+                            </View>
+                        ))}</View>
+                    </ScrollView>
                 </View>
             </ScrollView>
         </ImageBackground>
@@ -141,12 +173,6 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         fontSize: 19,
     },
-    hr_line: {
-        backgroundColor: '#ccc',
-        width: '100%',
-        height: 1,
-        marginTop: '10%'
-    },
     user_info_block: {
         margin: '5%'
     },
@@ -164,6 +190,24 @@ const styles = StyleSheet.create({
     },
     targetNull: {
         textTransform: 'uppercase',
+        textAlign: 'center'
+    },
+    iterDirection: {
+        flexDirection: 'row',
+    },
+    iterWrap: {
+        alignItems: 'center',
+        paddingBottom: 50
+    },
+    iterName: {
+        fontSize: 10
+    },
+    iterImage: {
+        width: 50,
+        height: 50
+    },
+    addFriends: {
+        fontSize: 10,
         textAlign: 'center'
     }
 })

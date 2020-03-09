@@ -1,7 +1,7 @@
 import React, { useEffect, Fragment } from 'react';
-import { View, Text, StyleSheet, Dimensions, Image, ScrollView, ImageBackground, StatusBar, Clipboard } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Image, ScrollView, ImageBackground, StatusBar, Clipboard, Platform } from 'react-native';
 import { useDispatch, useSelector } from 'react-redux';
-import { getOtherProfileThunk, deleteAdminThunk, setAdminThunk } from '../../redux/reducers/profileReducer';
+import { getOtherProfileThunk } from '../../redux/reducers/profileReducer';
 import { Preloader } from '../../ui/Preloader';
 import { userImg } from '../../../assets/defaultImage';
 import { HeaderButtons, Item } from 'react-navigation-header-buttons';
@@ -13,6 +13,9 @@ import { unfollowUserThunk, followUserThunk } from '../../redux/reducers/usersRe
 import { ActivityIndicator } from 'react-native-paper';
 import { ActionSheet } from 'native-base';
 import { getDialogThunk } from '../../redux/reducers/dialogsReducer';
+import { openBrowser } from '../../ui/OpenBrowser';
+import * as MediaLibrary from 'expo-media-library';
+import { IconBack } from '../../ui/IconBack';
 
 export const User = ({ navigation }) => {
     const dispatch = useDispatch();
@@ -41,18 +44,6 @@ export const User = ({ navigation }) => {
     }
 
     const isAdmOwner = isAdmin.some(e => e.id === user.id);
-
-    const changeUser = () => {
-        if (!isAdmOwner) {
-            dispatch(setAdminThunk(user.id));
-        } else if (isAdmOwner) {
-            isAdmin.map(e => {
-                if (e.id === user.id) {
-                    dispatch(deleteAdminThunk(e.key));
-                }
-            });
-        }
-    }
     
     return (
         <ImageBackground style={styles.backImg} loadingIndicatorSource={<Preloader />} source={require('../../../assets/backgroundBeach.png')}>
@@ -62,7 +53,9 @@ export const User = ({ navigation }) => {
                     <View style={styles.wrapper}>
                         <View style={styles.titles}>
                             {isAdmOwner
-                            ? <Text style={{ ...styles.title, color: '#27AF38' }}>{profile.fullName} (админ)</Text>
+                            ? <Text style={{ ...styles.title, color: '#27AF38' }}>
+                                {profile.fullName} (админ)
+                            </Text>
                             : !isDeveloper.some(e => e.id === user.id)
                             ? (
                                 <Fragment>
@@ -83,10 +76,7 @@ export const User = ({ navigation }) => {
                                 uri: profile.photos.large || userImg
                             }} />
                             {user.id !== data.id
-                            ? <>{updateUser && <View style={{
-                                    flexDirection: 'row',
-                                    justifyContent: 'space-between'
-                                }}>
+                            ? <>{updateUser && <View style={styles.subscribe}>
                                     <Wrapper onPress={
                                         () => updateUser.followed
                                         ? dispatch(unfollowUserThunk(user.id))
@@ -126,31 +116,6 @@ export const User = ({ navigation }) => {
                                     </Wrapper>
                                 </View>}</>
                             : null}
-                            {isDeveloper.some(e => e.id === data.id && e.id !== user.id)
-                            && <Wrapper onPress={changeUser}>
-                                <View style={{
-                                    ...styles.subscribe_block,
-                                    marginTop: 10,
-                                    backgroundColor: !isAdmOwner ? '#27AF38' : '#C51518'                                
-                                }}>
-                                    {true
-                                    ? <><Ionicons
-                                        style={styles.subscribe_icon}
-                                        name={
-                                            isAdmOwner
-                                            ? 'md-close-circle-outline'
-                                            : 'md-add-circle-outline'
-                                        } size={24}
-                                        color='#fff'
-                                    />
-                                    <Text style={styles.text}>{
-                                        isAdmOwner
-                                        ? 'Снять админа'
-                                        : 'Назначить админом'
-                                    }</Text></>
-                                    : <ActivityIndicator size='small' color='#fff' />}
-                                </View>
-                            </Wrapper>}
                         </View>
                         {profile.aboutMe
                         ? <Block color='#fff' style={styles.text} title='статус:' value={profile.aboutMe} />
@@ -162,7 +127,7 @@ export const User = ({ navigation }) => {
                                 <Text style={{ color: '#fff' }}>{profile.lookingForAJobDescription}</Text>
                             </Fragment>
                         )
-                        : <Text style={{ ...styles.text, textAlign: 'center', padding: '1%' }}>информация о пользователе не указана</Text>}
+                        : <Text style={styles.nullInfo}>информация о пользователе не указана</Text>}
                         <Block color='#fff' style={styles.text} title='нужда в работе:' value={
                             profile.lookingForAJob ? 'ДА' : 'НЕТ'
                         } />
@@ -186,8 +151,10 @@ export const User = ({ navigation }) => {
 
 User.navigationOptions = ({ navigation }) => {
     const user = navigation.getParam('user');
+    const url = `https://hariesjs.github.io/React/#/profile/${user.id}`;
     return {
         headerTitle: user.name || user.userName,
+        headerLeft: () => <IconBack nav={navigation} />,
         headerRight: () => (
             <HeaderButtons HeaderButtonComponent={AppHeaderIcons}>
                 <Item
@@ -196,21 +163,23 @@ User.navigationOptions = ({ navigation }) => {
                     onPress={() => {
                         ActionSheet.show(
                             {
-                                options: ['Скопировать ссылку', 'Сохранить аватар', 'Заблокировать', 'Отменить'],
-                                cancelButtonIndex: 3,
-                                destructiveButtonIndex: 2,
+                                options: ['Скопировать ссылку', 'Сохранить аватар', 'Открыть в веб-версии', 'Заблокировать', 'Отменить'],
+                                cancelButtonIndex: 4,
+                                destructiveButtonIndex: 3,
                                 title: 'Допольнительно'
                             },
                             buttonIndex => {
                                 switch (buttonIndex) {
                                     case 0:
-                                        const url = `https://social-network.samuraijs.com/api/1.0/profile/${user.id}`
                                         Clipboard.setString(url);
                                         break;
                                     case 1:
-                                        console.log(200);
+                                        Platform.OS === 'ios' && MediaLibrary.saveToLibraryAsync(user.photos.large && user.photos.large.substring(0, user && user.photos.large.length - 4) || userImg);
                                         break;
                                     case 2:
+                                        openBrowser(url);
+                                        break;
+                                    case 3:
                                         break;
                                     default:
                                         break;
@@ -246,7 +215,7 @@ const styles = StyleSheet.create({
     },
     userImg: {
         width: Dimensions.get('window').width / 2,
-        height: Dimensions.get('window').height / 4,
+        height: Dimensions.get('window').height / 3.6,
         marginBottom: '10%'
     },
     imgWrap: {
@@ -283,5 +252,15 @@ const styles = StyleSheet.create({
         color: 'cornflowerblue',
         textAlign: 'center',
         paddingVertical: '2%'
+    },
+    subscribe: {
+        flexDirection: 'row',
+        justifyContent: 'space-between'
+    },
+    nullInfo: {
+        color: '#fff',
+        textTransform: 'uppercase',
+        textAlign: 'center',
+        padding: '1%'
     }
 })

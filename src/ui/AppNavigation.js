@@ -13,6 +13,8 @@ import { createDrawerNavigator } from 'react-navigation-drawer';
 import { CustomDrawerComponent } from '../components/CustomDrawerComponent';
 import { ProfileEdit } from '../components/Profile/ProfileEdit';
 import { Dialog } from '../components/Dialogs/Dialog';
+import { Geolocation } from '../components/Geolocation';
+import { AboutApp } from '../components/AboutApp';
 
 const navigationOptions = {
     defaultNavigationOptions: {
@@ -24,7 +26,7 @@ const navigationOptions = {
 }
 
 const UsersNavigator = createStackNavigator({ Users, User }, navigationOptions);
-const ProfileNavigator = createStackNavigator({ Profile, ProfileEdit }, navigationOptions);
+const ProfileNavigator = createStackNavigator({ Profile, ProfileEdit, Geolocation, AboutApp }, navigationOptions);
 const DialogsNavigator = createStackNavigator({ Dialogs, Dialog }, navigationOptions);
 
 const ProfileNavigatorDrawer = createDrawerNavigator({
@@ -40,27 +42,23 @@ const ProfileNavigatorDrawer = createDrawerNavigator({
     edgeWidth: Dimensions.get('window').width / 2
 });
 
+const navOption = (tabBarLabel, iconName) => ({
+    tabBarLabel,
+    tabBarIcon: info => <IconForBar info={info} name={iconName} />
+});
+
 const bottomTabConfig = {
     Users: {
         screen: UsersNavigator,
-        navigationOptions: {
-            tabBarLabel: 'Пользователи',
-            tabBarIcon: info => <IconForBar info={info} name='ios-people' />
-        }
+        navigationOptions: navOption('Пользователи', 'ios-people')
     },
     Dialogs: {
         screen: DialogsNavigator,
-        navigationOptions: {
-            tabBarLabel: 'Сообщения',
-            tabBarIcon: info => <IconForBar info={info} name='ios-chatboxes' />
-        }
+        navigationOptions: navOption('Сообщения', 'ios-chatboxes')
     },
     Profile: {
         screen: ProfileNavigatorDrawer,
-        navigationOptions: {
-            tabBarLabel: 'Мой профиль',
-            tabBarIcon: info => <IconForBar info={info} name='ios-contact' />
-        }
+        navigationOptions: navOption('Мой профиль', 'ios-contact')
     }
 }
 
@@ -86,7 +84,6 @@ const AppNavigation = Platform.OS === 'ios'
 
 DialogsNavigator.navigationOptions = ({ navigation }) => {
     let tabBarVisible;
-    if (navigation.state.routes.length > 1) {
         navigation.state.routes.map(route => {
             if (route.routeName === 'Dialog') {
                 tabBarVisible = false;
@@ -94,11 +91,28 @@ DialogsNavigator.navigationOptions = ({ navigation }) => {
                 tabBarVisible = true;
             }
         });
-    }
   
     return {
         tabBarVisible
     };
+};
+
+ProfileNavigatorDrawer.navigationOptions = ({ navigation }) => {
+    const currentRoute = navigation.state.routes[navigation.state.index];
+    const { routeName } = currentRoute;
+
+    let tabBarVisible = true;
+    if (routeName === 'Profile') {
+        const { routeName } = currentRoute.routes[currentRoute.index];
+
+        if (routeName === 'ProfileEdit' || routeName === 'Geolocation' || routeName === 'AboutApp') {
+            tabBarVisible = false;
+        }
+    }
+
+    return {
+        tabBarVisible
+    }
 };
 
 export default createAppContainer(AppNavigation);

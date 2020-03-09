@@ -7,8 +7,7 @@ import { Wrapper } from '../../ui/Wrapper';
 import { userImg } from '../../../assets/defaultImage';
 import { ActionSheet } from 'native-base';
 import { postMessageThunk, getDialogsThunk } from '../../redux/reducers/dialogsReducer';
-import { HeaderButtons, Item } from 'react-navigation-header-buttons';
-import { AppHeaderIcons } from '../../ui/AppHeaderIcons';
+import { IconBack } from '../../ui/IconBack';
 
 export const Dialog = ({ navigation }) => {
     const dispatch = useDispatch();
@@ -66,7 +65,9 @@ export const Dialog = ({ navigation }) => {
                 {dialog.length
                 ? <ScrollView>
                     <View style={styles.dialogAdaptive}></View>
-                    <Text style={styles.dateTitle}>Это вся история сообщений с пользователем.</Text>{
+                    <Text style={styles.dateTitle}>
+                        Это вся история сообщений с пользователем.
+                    </Text>{
                     dialog.map(e => {
                         const isSender = e.senderId === dialogData.id;
                         return (
@@ -109,25 +110,17 @@ export const Dialog = ({ navigation }) => {
                     })
                 }</ScrollView>
                 : (
-                    <View style={{
-                        bottom: Dimensions.get('window').height / 3.5,
-                        alignItems: 'center'
-                    }}>
+                    <View style={styles.nullDialog}>
                         <MaterialCommunityIcons
                             name='message-text'
                             size={100}
                             color='#ccc'
                         />
-                        <Text style={{
-                            textAlign: 'center',
-                            fontSize: 18,
-                            color: 'grey'
-                        }}>История сообщений пуста.</Text>
+                        <Text style={styles.messageHistory}>История сообщений пуста.</Text>
                     </View>
                 )}
             </View>
             <View>
-                <View style={{ borderStyle: 'solid', borderTopWidth: 1, borderColor: '#ccc' }}></View>
                 <View style={styles.inputBlock}>
                     <TouchableOpacity 
                         onPress={() => {
@@ -178,13 +171,8 @@ Dialog.navigationOptions = ({ navigation }) => {
             <View style={{
                 alignItems: Platform.OS === 'ios' ? 'center' : 'flex-start'
             }}>
-                <Text style={{
-                    color: '#fff',
-                    fontSize: 16
-                }}>{dialog.userName || dialog.name}</Text>
-                <Text style={{
-                    color: '#ccc'
-                }}>
+                <Text style={styles.dialogUserName}>{dialog.userName || dialog.name}</Text>
+                <Text style={{ color: '#ccc' }}>
                     <>{
                         dialog.lastUserActivityDate
                         ? new Date(dialog.lastUserActivityDate).toLocaleString()
@@ -193,11 +181,7 @@ Dialog.navigationOptions = ({ navigation }) => {
                 </Text>
             </View>
         ),
-        headerLeft: () => (
-            <HeaderButtons HeaderButtonComponent={AppHeaderIcons}>
-                <Item title='edit-back' iconName='ios-arrow-back' onPress={() => navigation.goBack()} />
-            </HeaderButtons> // in future create hoc for this components (!)
-        ),
+        headerLeft: () => <IconBack nav={navigation} />,
         headerRight: () => (
             <Wrapper onPress={() => navigation.navigate('User', { user: dialog })}>
                 <Image
@@ -253,5 +237,18 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         fontSize: 15,
         color: 'grey'
+    },
+    nullDialog: {
+        bottom: Dimensions.get('window').height / 3.5,
+        alignItems: 'center'
+    },
+    messageHistory: {
+        textAlign: 'center',
+        fontSize: 18,
+        color: 'grey'
+    },
+    dialogUserName: {
+        color: '#fff',
+        fontSize: 16
     }
 })

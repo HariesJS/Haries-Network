@@ -79,14 +79,6 @@ export class Ajax {
     static getAdmin() {
         return axios.get('https://haries-network.firebaseio.com/isadmin.json');
     }
-
-    static postAdmin(id) {
-        return axios.post('https://haries-network.firebaseio.com/isadmin.json', id);
-    }
-
-    static deleteAdmin(key) {
-        return axios.delete(`https://haries-network.firebaseio.com/isadmin/${key}.json`);
-    }
     
     static getMessages() {
         return instance.get('dialogs');

@@ -8,7 +8,6 @@ import { userImg } from '../../../assets/defaultImage';
 import { Preloader } from '../../ui/Preloader';
 import { HeaderButtons, Item } from 'react-navigation-header-buttons';
 import { AppHeaderIcons } from '../../ui/AppHeaderIcons';
-import { Search } from '../../ui/Search';
 import { ActivityIndicator } from 'react-native-paper';
 import { Pagination } from '../../ui/Pagination';
 
@@ -17,9 +16,11 @@ export const Users = ({ navigation }) => {
 
     const users = useSelector(state => state.usersAPI.users);
     const isOnline = useSelector(state => state.usersAPI.isOnline);
+    
 
     const isDeveloper = useSelector(state => state.profileAPI.isDeveloper);
     const isAdmin = useSelector(state => state.profileAPI.isAdmin);
+    const data = useSelector(state => state.authAPI.data);
 
     const [page, setPage] = useState(3);
     const [isSearch, setIsSearch] = useState(false);
@@ -63,7 +64,7 @@ export const Users = ({ navigation }) => {
     }
 
     const renderLoader = () => (
-        <>{<View style={{ alignItems: 'center', padding: '1%' }}>
+        <>{<View style={styles.renderView}>
             {Platform.OS === 'ios'
             ? <ActivityIndicator size='small' color='#fff' />
             : <Button
@@ -83,11 +84,7 @@ export const Users = ({ navigation }) => {
             source={require('../../../assets/backgroundLa.png')}
         >
             {isSearch &&
-            <View style={{
-                backgroundColor: 'rgba(57,89,171,0.9)',
-                alignItems: 'center'
-            }}>
-                <Search />
+            <View style={styles.searchStyle}>
                 <Pagination onPage={openNewPage} />
             </View>}
             {users.length
@@ -104,7 +101,7 @@ export const Users = ({ navigation }) => {
                     onEndReached={loadMore}
                     onEndReachedThreshold={0}
                     ListFooterComponent={renderLoader}
-                    data={users}
+                    data={users.filter(e => e.id !== data.id)}
                     renderItem={({ item }) => (
                         <Wrapper
                             onPress={() => openProfile(item)}
@@ -114,15 +111,24 @@ export const Users = ({ navigation }) => {
                             <View style={styles.block}>
                                 <View style={styles.titles}>
                                     {isOnline.some(e => e.id === item.id)
-                                    ? <Text style={{ color: 'aqua' }}>ONLINE</Text>
-                                    : <Text style={{ color: '#ccc' }}>OFFLINE</Text>}
+                                    ? <Text style={styles.online}>ONLINE</Text>
+                                    : <Text style={styles.offline}>OFFLINE</Text>}
                                     {isDeveloper.some(e => e.id === item.id)
                                     ? <Text style={{ ...styles.name, color: '#FF0000' }}>{item.name}</Text>
                                     : isAdmin.some(e => e.id === item.id)
                                     ? <Text style={{ ...styles.name, color: '#27AF38' }}>{item.name}</Text>
                                     : <Text style={styles.name}>{item.name}</Text>}
-                                    <Text style={{ color: '#fff' }}>{item.id}</Text>
-                                    <Text style={item.status && item.status.length < 30 ? { display: 'flex' } : { display: 'none' }}>{item.status && <Text style={styles.name}>{item.status}</Text>}</Text>
+                                    <Text style={styles.userId}>{item.id}</Text>
+                                    <Text
+                                        style={item.status
+                                        && item.status.length < 20
+                                        ? { display: 'flex' }
+                                        : { display: 'none' }}>
+                                            {item.status
+                                            && <Text style={styles.name}>
+                                                {item.status}
+                                            </Text>}
+                                    </Text>
                                 </View>
                                 <Image style={styles.userImage} source={{
                                     uri: item.photos.large || userImg
@@ -164,7 +170,8 @@ const styles = StyleSheet.create({
         height: '100%'
     },
     block: {
-        justifyContent: 'space-around',
+        justifyContent: 'space-between',
+        paddingHorizontal: Dimensions.get('window').width / 7,
         flexDirection: 'row-reverse',
         backgroundColor: 'rgba(57,89,171,0.7)',
         margin: '2%',
@@ -190,5 +197,22 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 18,
         padding: 10
+    },
+    renderView: {
+        alignItems: 'center',
+        padding: '1%'
+    },
+    searchStyle: {
+        backgroundColor: 'rgba(57,89,171,0.9)',
+        alignItems: 'center'
+    },
+    online: {
+        color: 'aqua'
+    },
+    offline: {
+        color: '#ccc'
+    },
+    userId: {
+        color: '#fff'
     }
 })

@@ -12,7 +12,7 @@ export const InputRender = props => {
                 ...styles.input,
                 borderBottomColor: 'red',
                 borderBottomWidth: 3,
-                borderStyle: 'solid'
+                borderStyle: 'solid',
             } : { ...styles.input }
             } { ...props.input } { ...props }
         />
